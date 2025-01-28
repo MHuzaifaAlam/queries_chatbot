@@ -11,12 +11,12 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 # Load model and supporting files
-model = tf.keras.models.load_model('chatbot_model.h5')
+model = tf.keras.models.load_model('model/chatbot_model.h5')
 
-with open('tokenizer.pickle', 'rb') as handle:
+with open('model/tokenizer.pickle', 'rb') as handle:
     tokenizer = pickle.load(handle)
 
-with open('label_encoder.pickle', 'rb') as handle:
+with open('model/label_encoder.pickle', 'rb') as handle:
     label_encoder = pickle.load(handle)
 
 # Preprocess user input
