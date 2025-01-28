@@ -32,36 +32,53 @@ namespace quries_chatbot
 			ChatHistoryListBox.ItemsSource = ChatHistory;
 		}
 
-		private async void SendButton_Click(object sender, RoutedEventArgs e)
-		{
-			string userQuery = QueryInputTextBox.Text.Trim();
-			if (string.IsNullOrEmpty(userQuery)) return;
+        private async void SendQuery_Click(object sender, RoutedEventArgs e)
+        {
+            string query = UserQuery.Text; // Get the user query
+            string apiUrl = "http://1234abcd.ngrok.io/predict"; // Replace with your FastAPI URL
 
-			// Add user's query to chat
-			ChatHistory.Add(new ChatMessage
-			{
-				Message = userQuery,
-				Foreground = "#000000",
-				Background = "#E0E0E0",
-				IsUserMessage = true
-			});
-			QueryInputTextBox.Clear();
+            // Create an HTTP client
+            using (HttpClient client = new HttpClient())
+            {
+                // Prepare the request payload
+                var payload = new { query = query };
+                var jsonPayload = JsonSerializer.Serialize(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-			// Get chatbot response
-			string botResponse = await Task.Run(() => GetBotResponse(userQuery));
+                try
+                {
+                    // Send POST request
+                    HttpResponseMessage response = await client.PostAsync(apiUrl, content);
 
-			// Add bot response to chat
-			ChatHistory.Add(new ChatMessage
-			{
-				Message = botResponse,
-				Foreground = "#FFFFFF",
-				Background = "#10A37F",
-				IsUserMessage = false
-			});
-			ChatHistoryListBox.ScrollIntoView(ChatHistoryListBox.Items[ChatHistoryListBox.Items.Count - 1]);
-		}
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Parse the response
+                        string responseString = await response.Content.ReadAsStringAsync();
+                        var responseObject = JsonSerializer.Deserialize<ChatbotResponse>(responseString);
 
-		private string GetBotResponse(string query)
+                        // Display the response
+                        ChatbotResponse.Text = responseObject.intent; // Adjust based on your API response
+                    }
+                    else
+                    {
+                        ChatbotResponse.Text = "Error: " + response.StatusCode;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ChatbotResponse.Text = "Error: " + ex.Message;
+                }
+            }
+        }
+
+        // Response class for parsing API response
+        public class ChatbotResponse
+        {
+            public string intent { get; set; }
+        }
+
+
+        private string GetBotResponse(string query)
 		{
 			string response = "I'm sorry, I didn't understand that.";
 			using (Py.GIL())
